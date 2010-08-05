@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies,GADTs,MultiParamTypeClasses,FlexibleInstances,UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies,GADTs #-}
 module Skew where
 import Number
 
@@ -53,13 +53,14 @@ instance Element (TreeElement a) where
   extract (TreeElement []) = Nothing
   extract (TreeElement (a:as)) = Just (a, TreeElement as)
 
-class LessThan a b
-instance (LessThan a b, LessThan b c) => LessThan a c
-instance (Number n) => LessThan n (Succ n)
---instance (Atom a, Number n) => LessThan (a n) (a (Succ n))
-instance (Element e, Number n) => LessThan (e n) (e (Succ n))
+data Molecule e n where
+  ( :<: ) :: (Number n, LessThan n m, Element e) => e n -> Molecule e m -> Molecule e n
+  EOM :: Molecule e Infinity
 
-class Ordered o where
-  type First o
-  type Rest o
+infixr 5 :<:
+
+int1 :: Molecule IntElement One
+int1 = (IntElement 2) :<: EOM
+int0 :: Molecule IntElement Zero
+int0 = (IntElement 1) :<: int1
 
