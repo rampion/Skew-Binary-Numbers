@@ -3,15 +3,16 @@ module Skew where
 import Number
 
 class Atom a where
-  type Value a
-  fuse :: (Number n) => Value a -> a n -> a n -> a (Succ n)
-  decay :: (Number n) => a (Succ n) -> (Value a, a n, a n)
+  type Particle a
+  fuse :: (Number n) => Particle a -> a n -> a n -> a (Succ n)
+  decay :: (Number n) => a (Succ n) -> (Particle a, a n, a n)
   none :: a Zero
 
-data IntAtom n = IntAtom
+data IntAtom n where
+  IntAtom :: (Number n) => IntAtom n
 
 instance Atom IntAtom where
-  type Value IntAtom = ()
+  type Particle IntAtom = ()
   fuse _ _ _ = IntAtom
   decay _ = ( (), IntAtom, IntAtom)
   none = IntAtom
@@ -21,10 +22,22 @@ data TreeAtom a n where
   Leaf :: TreeAtom a Zero
 
 instance Atom (TreeAtom a) where
-  type Value (TreeAtom a) = a
+  type Particle (TreeAtom a) = a
   fuse = Branch
   decay (Branch a l r) = (a, l, r)
   none = Leaf
 
 class Element e where
   type BaseAtom e
+  empty :: e -> Bool
+  inject :: BaseAtom e -> e -> e
+  extract :: e -> Maybe (BaseAtom e, e)
+
+data IntElement n where
+  IntElement :: (Number n) => Int -> IntElement n
+
+instance Element (IntElement n) where
+  type BaseAtom (IntElement n) = IntAtom n
+  empty (IntElement c) = (c == 0)
+  inject _ (IntElement c) = IntElement $ c + 1
+  extract (IntElement c) = if (c > 0) then Just ( IntAtom, IntElement $ c - 1 ) else Nothing
