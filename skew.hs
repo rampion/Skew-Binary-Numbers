@@ -25,3 +25,6 @@ instance Atom (TreeAtom a) where
   fuse = Branch
   decay (Branch a l r) = (a, l, r)
   none = Leaf
+
+class Element e where
+  type BaseAtom e
