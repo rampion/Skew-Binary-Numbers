@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies,GADTs #-}
+{-# LANGUAGE TypeFamilies,GADTs,MultiParamTypeClasses,FlexibleInstances,UndecidableInstances #-}
 module Skew where
 import Number
 
@@ -28,16 +28,38 @@ instance Atom (TreeAtom a) where
   none = Leaf
 
 class Element e where
-  type BaseAtom e
-  empty :: e -> Bool
-  inject :: BaseAtom e -> e -> e
-  extract :: e -> Maybe (BaseAtom e, e)
+  type BaseAtom e :: * -> *
+  empty :: e n -> Bool
+  inject :: BaseAtom e n -> e n -> e n
+  extract :: e n -> Maybe (BaseAtom e n, e n)
 
 data IntElement n where
   IntElement :: (Number n) => Int -> IntElement n
 
-instance Element (IntElement n) where
-  type BaseAtom (IntElement n) = IntAtom n
+instance Element IntElement where
+  type BaseAtom IntElement = IntAtom
   empty (IntElement c) = (c == 0)
   inject _ (IntElement c) = IntElement $ c + 1
-  extract (IntElement c) = if (c > 0) then Just ( IntAtom, IntElement $ c - 1 ) else Nothing
+  extract (IntElement 0) = Nothing
+  extract (IntElement i) = Just ( IntAtom, IntElement $ i - 1 )
+
+data TreeElement a n where
+  TreeElement :: (Number n) => [ TreeAtom a n ] -> TreeElement a n
+
+instance Element (TreeElement a) where
+  type BaseAtom (TreeElement a) = TreeAtom a
+  empty (TreeElement as) = null as
+  inject a (TreeElement as) = TreeElement (a:as)
+  extract (TreeElement []) = Nothing
+  extract (TreeElement (a:as)) = Just (a, TreeElement as)
+
+class LessThan a b
+instance (LessThan a b, LessThan b c) => LessThan a c
+instance (Number n) => LessThan n (Succ n)
+--instance (Atom a, Number n) => LessThan (a n) (a (Succ n))
+instance (Element e, Number n) => LessThan (e n) (e (Succ n))
+
+class Ordered o where
+  type First o
+  type Rest o
+
