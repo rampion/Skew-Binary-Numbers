@@ -58,8 +58,16 @@ instance (LessThan a b, LessThan b c) => LessThan a c
 instance (Number n) => LessThan n (Succ n)
 --instance (Atom a, Number n) => LessThan (a n) (a (Succ n))
 instance (Element e, Number n) => LessThan (e n) (e (Succ n))
+instance (Element e, Number n) => LessThan (e n) ()
 
 class Ordered o where
   type First o
   type Rest o
 
+instance (Ordered l, LessThan a (First l)) => Ordered (a, l) where
+  type First (a,l) = a
+  type Rest (a,l) = l
+
+instance Ordered () where
+  type First () = ()
+  type Rest () = ()
