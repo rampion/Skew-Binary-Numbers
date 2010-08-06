@@ -50,10 +50,11 @@ instance (Atom a) => Atom (Weighted a) where
 
 instance (Subscript s a) => Subscript (Weighted s) (Weighted a) where
   zero = Weighted Unknown zero
-  increment (Weighted w a) (Weighted w' s) = do
+  include (Weighted w a) (Weighted w' s) = do
     w'' <- wmerge w w'
-    s' <- increment a s
+    s' <- include a s
     return $ Weighted w'' s'
-  decrement (Weighted w s) = do
-    (a, s') <- decrement s
+  extract (Weighted w s) = do
+    (a, s') <- extract s
     return $ (Weighted w a, Weighted w s')
+  cardinality (Weighted w s) = cardinality s

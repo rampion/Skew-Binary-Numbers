@@ -37,24 +37,27 @@ instance Atom (TreeAtom p) where
 
 class (Atom a) => Subscript s a | s -> a where
   zero :: s
-  increment :: a -> s -> Maybe s
-  decrement :: s -> Maybe (a, s)
+  include :: a -> s -> Maybe s
+  extract :: s -> Maybe (a, s)
+  cardinality :: s -> Int
 
 data CountSubscript where
   CountSubscript :: Int -> CountSubscript
 
 instance Subscript CountSubscript CountAtom where
   zero = CountSubscript 0
-  increment _ (CountSubscript c) = Just $ CountSubscript $ c + 1
-  decrement (CountSubscript 0) = Nothing
-  decrement (CountSubscript i) = Just ( CountAtom, CountSubscript $ i - 1 )
+  include _ (CountSubscript c) = Just $ CountSubscript $ c + 1
+  extract (CountSubscript 0) = Nothing
+  extract (CountSubscript i) = Just ( CountAtom, CountSubscript $ i - 1 )
+  cardinality (CountSubscript i) = i
 
 data TreeSubscript a where
   TreeSubscript :: [ TreeAtom a ] -> TreeSubscript a
 
 instance Subscript (TreeSubscript a) (TreeAtom a) where
   zero = TreeSubscript []
-  increment a (TreeSubscript as) = Just $ TreeSubscript (a:as)
-  decrement (TreeSubscript []) = Nothing
-  decrement (TreeSubscript (a:as)) = Just (a, TreeSubscript as)
+  include a (TreeSubscript as) = Just $ TreeSubscript (a:as)
+  extract (TreeSubscript []) = Nothing
+  extract (TreeSubscript (a:as)) = Just (a, TreeSubscript as)
+  cardinality (TreeSubscript as) = length as
 
