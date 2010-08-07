@@ -44,9 +44,9 @@ dec (ListPrefix (s:ss) n) = do
   -- make a collection of the lighter atoms
   s'<- (include l zero >>= include r)
   -- include the original colection if it's nonempty
-  let (prepend, i) = if 0 > cardinality s then ((s:), 1) else (id, 0)
+  let (prepend, i) = if 0 < cardinality s then ((s:), 1) else (id, 0)
   -- include the new collection if it's not weightless
-  let (prepend', i') = if 0 > weight s' then ((s':), 1) else (id, 0)
+  let (prepend', i') = if 0 < weight s' then ((s':), 1) else (id, 0)
   return (p, ListPrefix (prepend' $ prepend ss) (n - 1 + i + i'))
 
 inc :: (Atom a, Subscript s a) => Particle a -> ListPrefix (Weighted s) -> Maybe (ListPrefix (Weighted s))
@@ -99,13 +99,18 @@ normalize unnormalized = normalized
             maybe (Nothing, []) (uncurry normalize') $
               -- if not the first nonozero, decrement the seen half,
               -- and increment the reset to get rid of a two
-              if m > 0 {- and count >= 2 -} then do
+              if m > 0 {- && count >= 2 -} then do
                 (p, prefix') <- dec prefix
                 terms' <- inc p terms
                 return (prefix', terms')
+              -- if we're just working with high counts in the ones place
+              -- just decrement and increment
+              else if weight s == 0  then do
+                terms' <- (dec terms >>= uncurry inc)
+                return (prefix, terms')
               -- if more than two (and no nonzeroes), decrement the unseen half,
               -- then increment to get rid of a two
-              else {- if m == 0 and count > 2 -} do
+              else {- if weight s > 0 &&  m == 0 && count > 2 then -} do
                 (p, ListPrefix (s':ss') n') <- dec terms
-                terms' <- inc p (ListPrefix ss' (n' - 1))
-                return (prefix, terms')
+                ListPrefix ss' n'' <- inc p (ListPrefix ss' (n' - 1))
+                return (prefix, ListPrefix (s':ss') (n''+1))
