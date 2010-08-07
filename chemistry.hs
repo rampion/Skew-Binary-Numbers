@@ -17,6 +17,7 @@ decapsulate a = do
 
 data CountAtom where
   CountAtom :: CountAtom
+  deriving (Show, Eq)
 
 instance Atom CountAtom where
   type Particle CountAtom = ()
@@ -27,6 +28,7 @@ instance Atom CountAtom where
 data TreeAtom p where
   Branch :: p -> TreeAtom p -> TreeAtom p -> TreeAtom p
   Leaf :: TreeAtom p
+  deriving (Show, Eq)
 
 instance Atom (TreeAtom p) where
   type Particle (TreeAtom p) = p
@@ -43,6 +45,7 @@ class (Atom a) => Subscript s a | s -> a where
 
 data CountSubscript where
   CountSubscript :: Int -> CountSubscript
+  deriving (Show, Eq)
 
 instance Subscript CountSubscript CountAtom where
   zero = CountSubscript 0
@@ -53,6 +56,7 @@ instance Subscript CountSubscript CountAtom where
 
 data TreeSubscript a where
   TreeSubscript :: [ TreeAtom a ] -> TreeSubscript a
+  deriving (Show, Eq)
 
 instance Subscript (TreeSubscript a) (TreeAtom a) where
   zero = TreeSubscript []

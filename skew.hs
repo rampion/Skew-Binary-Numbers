@@ -4,6 +4,7 @@ import Weight
 import Data.Maybe (fromJust)
 
 data ListPrefix a = ListPrefix [a] Int
+  deriving (Show, Eq)
 
 dec :: (Atom a, Subscript s a) => ListPrefix (Weighted s) -> 
        Maybe (Particle a, ListPrefix (Weighted s))
@@ -27,9 +28,9 @@ inc p (ListPrefix ss n)
     -- create an atom out of the particle
     a <- encapsulate p
     -- use the weight 1 collection if available
-    let (s, ss', n') = if weight (head ss) == 1
-                       then (head ss, tail ss, n - 1)
-                       else (zero, ss, n)
+    let (s, ss', n') = if n == 0 || weight (head ss) > 1
+                       then (zero, ss, n)
+                       else (head ss, tail ss, n - 1)
     -- pack the new atom into its collection
     s <- include a s
     return $ ListPrefix (s:ss') (1+n')
@@ -43,7 +44,7 @@ inc p (ListPrefix ss n)
     -- include the original collection if it's nonempty
     let (prepend, i) = if 0 > cardinality s then ((s:), 1) else (id, 0)
     -- create or find a collection for the heavier atom
-    let (s', ss'', n'') = if weight (head ss') > 1 + weight s 
+    let (s', ss'', n'') = if n == 1 || weight (head ss') > 1 + weight s 
                           then (zero, ss', n - 1)
                           else (head ss', tail ss', n - 2)
     -- pack the heavier atom in its collection

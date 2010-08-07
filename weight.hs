@@ -27,6 +27,7 @@ instance Num Weight where
 
 data Weighted a where
   Weighted :: Weight -> a -> Weighted a
+  deriving (Show, Eq)
 
 weight :: Weighted a -> Weight
 weight (Weighted w _) = w
