@@ -93,7 +93,8 @@ normalize unnormalized = normalized
             normalize' prefix tail
           -- allow all 0s and 1s (and 2s if they are the first nonzero)
           else if count <= (if m == 0 then 2 else 1) then
-            normalize' (ListPrefix qs $ m+1) tail
+            let (normalized, suffix) = normalize' (ListPrefix qs $ m+1) tail
+            in (normalized, s:suffix)
           else 
             maybe (Nothing, []) (uncurry normalize') $
               -- if not the first nonozero, decrement the seen half,
