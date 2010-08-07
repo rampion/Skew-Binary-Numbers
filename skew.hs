@@ -50,32 +50,33 @@ inc p (ListPrefix ss n)
     s' <- include a s'
     return $ ListPrefix (prepend $ s':ss'') (i+1+n'')
         
-        
-      
-
-{-
 normalize :: (Subscript s a) => ListPrefix (Weighted s) -> Maybe (ListPrefix (Weighted s))
 normalize unnormalized = normalized
   where (normalized, queue) = normalize' (ListPrefix queue 0) unnormalized
         normalize' :: (Subscript s a) => ListPrefix (Weighted s) -> 
-                      ListPrefix (Weighted s) -> ( ListPrefix (Weighted s), [Weighted s])
+                      ListPrefix (Weighted s) -> ( Maybe (ListPrefix (Weighted s)), [Weighted s])
+        -- stop normalizing when we run out of terms
         normalize' prefix (ListPrefix _ 0) = (Just prefix, [])
         normalize' prefix@(ListPrefix qs m) terms@(ListPrefix (s:ss) n) =
           let count = cardinality s 
-              tail = ListPrefix ss (n-1)
-              (prefix', terms') = 
-                if count == 0 then
-                  (prefix, tail)
-                else if count <= (if m == 0 then 2 else 1) then
-                  (ListPrefix qs (m+1), tail)
-                else if m > 0 {- and count >= 2 -} then fromJust $ do
-                  (p, prefix') <- dec prefix
-                  terms' <- inc p terms
-                  return (prefix', terms')
-                else {- if m == 0 and count > 2 -} fromJust $ do
-                  (p, ListPrefix (s':ss') n') <- dec terms
-                  terms' <- inc p (ListPrefix ss' (n' - 1))
-                  return (prefix, terms')
-          in
-          normalize prefix' terms'
-          -}
+              tail = ListPrefix ss (n-1) in
+          -- elide items with count zero
+          if count == 0 then
+            normalize' prefix tail
+          -- allow all 0s and 1s (and 2s if they are the first nonzero)
+          else if count <= (if m == 0 then 2 else 1) then
+            normalize' (ListPrefix qs $ m+1) tail
+          else 
+            maybe (Nothing, []) (uncurry normalize') $
+              -- if not the first nonozero, decrement the seen half,
+              -- and increment the reset to get rid of a two
+              if m > 0 {- and count >= 2 -} then do
+                (p, prefix') <- dec prefix
+                terms' <- inc p terms
+                return (prefix', terms')
+              -- if more than two (and no nonzeroes), decrement the unseen half,
+              -- then increment to get rid of a two
+              else {- if m == 0 and count > 2 -} do
+                (p, ListPrefix (s':ss') n') <- dec terms
+                terms' <- inc p (ListPrefix ss' (n' - 1))
+                return (prefix, terms')
