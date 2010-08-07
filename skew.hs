@@ -1,11 +1,38 @@
+{-# LANGUAGE FlexibleInstances,TypeSynonymInstances #-}
 module Skew where
 import Chemistry
 import Weight
-import Data.Maybe (fromJust)
+import Control.Monad (guard)
 
 data ListPrefix a = ListPrefix [a] Int
-  deriving (Show, Eq)
+  deriving (Eq)
 
+type CountList = ListPrefix (Weighted CountSubscript)
+instance Show CountList where
+  show (ListPrefix l n) = s
+    where (_, s) = foldl showDigits (0, "o") $ take n l
+          showDigits (m, s) x@(Weighted (Known w) (CountSubscript i)) 
+            | m + 1 < w = showDigits (m+1, '0':s) x
+            | otherwise = (w, (if 0 <= i && i <= 9 then show i else "(" ++ show i ++ ")") ++ s)
+
+digit :: String -> Maybe (Int, String)
+digit [] = Nothing
+digit s@(d:s')  | '0' <= d && d <= '9' = Just (read [d], s')
+                | otherwise = if null ri then Nothing else Just $ head ri
+                    where ri = readParen True reads s
+
+digits :: [Int] -> ReadS [Int]
+digits is s = maybe [(is, s)] (\(i,s) -> digits (i:is) s) (digit s)
+
+instance Read CountList where
+  readsPrec _ s = do
+    (is, 'o':s) <- digits [] s
+    let l = map (\(w,i) -> Weighted (Known w) (CountSubscript i)) $
+            filter ((0 /=) . snd) $ 
+            zip [1,2..] is
+    let n = length l
+    return ( ListPrefix l n, s )
+  
 dec :: (Atom a, Subscript s a) => ListPrefix (Weighted s) -> 
        Maybe (Particle a, ListPrefix (Weighted s))
 dec (ListPrefix _ 0) = Nothing
@@ -42,7 +69,7 @@ inc p (ListPrefix ss n)
     -- fuse them with the particle to create a heavier atom
     a <- fuse p l r
     -- include the original collection if it's nonempty
-    let (prepend, i) = if 0 > cardinality s then ((s:), 1) else (id, 0)
+    let (prepend, i) = if 0 < cardinality s then ((s:), 1) else (id, 0)
     -- create or find a collection for the heavier atom
     let (s', ss'', n'') = if n == 1 || weight (head ss') > 1 + weight s 
                           then (zero, ss', n - 1)
