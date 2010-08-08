@@ -1,0 +1,7 @@
+This is a project to play with various representations of skew binary numbers,
+including 
+* pure numbers
+* forests of full binary trees
+* forests of skew binomial trees (forthcoming)
+
+This work was inspired by a reading of Brodal & Okasaki's "Optimal Purely Functional Priority Queues".

@@ -1,3 +1,3 @@
-* add tests
+* add tests (QuickCheck should suffice)
 * instance Num CountList
 * push/pop ListPrefix
